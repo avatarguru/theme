@@ -13,7 +13,8 @@
     "require": {
       "php": ">=5.4.0",
       "jeremeamia/superclosure": "^2.0",
-      "twig/twig": "1.x"
+      "twig/twig": "1.x",
+      "avatarguru/theme": "master@dev"
     },
     "require-dev": {
       "illuminate/support": ">=5.0.1"
