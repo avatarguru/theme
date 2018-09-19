@@ -77,7 +77,7 @@ class WidgetGeneratorCommand extends Command {
 
         // Get class template.
         $widgetClassTemplate = $this->getTemplate('widgetClass');
-
+        
         // Directories.
         $container = $this->config->get('theme.containerDir');
 
@@ -219,7 +219,7 @@ class WidgetGeneratorCommand extends Command {
      */
     protected function getTemplate($template)
     {
-        $path = realpath(__DIR__.'/../templates/'.$template.'.php');
+        $path = realpath(__DIR__.'/../templates/'.$template.'.txt');
 
         return $this->files->get($path);
     }

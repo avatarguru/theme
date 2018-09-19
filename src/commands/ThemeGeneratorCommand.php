@@ -73,40 +73,43 @@ class ThemeGeneratorCommand extends Command {
     // Directories.
 		$container = $this->config->get('theme.containerDir');
 
-    $this->makeDir($container['asset'].'/css');
-		$this->makeDir($container['asset'].'/js');
-		$this->makeDir($container['asset'].'/img');
-		$this->makeDir($container['layout']);
-		$this->makeDir($container['partial']);
-		$this->makeDir($container['view']);
-		$this->makeDir($container['widget']);
+    $this->makeDirs($container['asset'].'/css');
+		$this->makeDirs($container['asset'].'/js');
+		$this->makeDirs($container['asset'].'/img');
+		$this->makeDirs($container['layout']);
+		$this->makeDirs($container['partial']);
+		$this->makeDirs($container['view']);
+		$this->makeDirs($container['widget']);
 
     // Default layout.
 		$layout = $this->config->get('theme.layoutDefault');
 
+		$this->makeFiles('assets/js/script.js', $this->getTemplate('script'));
+		$this->makeFiles('assets/css/style.css', $this->getTemplate('style'));
+
 		// Make file example.
 		switch ($type) {
       case 'blade' :
-				$this->makeFile('layouts/'.$layout.'.blade.php', $this->getTemplate('layout.blade'));
-				$this->makeFile('partials/header.blade.php', $this->getTemplate('header'));
-				$this->makeFile('partials/footer.blade.php', $this->getTemplate('footer'));
+				$this->makeFiles('layouts/'.$layout.'.blade.php', $this->getTemplate('layout.blade'));
+				$this->makeFiles('partials/header.blade.php', $this->getTemplate('header'));
+				$this->makeFiles('partials/footer.blade.php', $this->getTemplate('footer'));
 				break;
-
 			case 'twig' :
-				$this->makeFile('layouts/'.$layout.'.twig.php', $this->getTemplate('layout.twig'));
-				$this->makeFile('partials/header.twig.php', $this->getTemplate('header'));
-				$this->makeFile('partials/footer.twig.php', $this->getTemplate('footer'));
+				$this->makeFiles('layouts/'.$layout.'.twig.php', $this->getTemplate('layout.twig'));
+				$this->makeFiles('partials/header.twig.php', $this->getTemplate('header'));
+				$this->makeFiles('partials/footer.twig.php', $this->getTemplate('footer'));
 				break;
-
 			default :
-				$this->makeFile('layouts/'.$layout.'.php', $this->getTemplate('layout'));
-				$this->makeFile('partials/header.php', $this->getTemplate('header'));
-				$this->makeFile('partials/footer.php', $this->getTemplate('footer'));
+				$this->makeFiles('layouts/'.$layout.'.php', $this->getTemplate('layout'));
+				$this->makeFiles('partials/header.php', $this->getTemplate('header'));
+				$this->makeFiles('partials/footer.php', $this->getTemplate('footer'));
 				break;
     }
 
     // Generate inside config.
-		$this->makeFile('config.php', $this->getTemplate('config'));
+		$this->makeFiles('config.php', $this->getTemplate('config'));
+		$this->makeFiles('gulpfile.js', $this->getTemplate('gulpfile'));
+		$this->makeFiles('theme.json', $this->getTemplate('theme'));
 
 		$this->info('Theme "'.$this->getTheme().'" has been created.');
   }
@@ -118,46 +121,34 @@ class ThemeGeneratorCommand extends Command {
 	* @param  array $directory
 	* @return void
   */
-	protected function makeDirs($directory)
+	protected function makeDirs($directory) {
+			if (!$this->files->isDirectory($this->getPath($directory))) {
+				$this->files->makeDirectory($this->getPath($directory), 0777, true);
+			}
+	}
+
+	/**
+	 * Make file.
+	 *
+	 * @param  string $file
+	 * @param  string $template
+	 * @return void
+	 */
+	protected function makeFiles($file, $template = null)
 	{
-		foreach ($directory as $path) {
-			if (!$this->files->isDirectory($this->getPath($path))){
-				$this->files->makeDirectory($this->getPath($path), 0777, true);
+		if (!$this->files->exists($this->getPath($file))) {
+			$file_path = $this->getPath($file);
+			$facade = $this->option('facade');
+			if (!is_null($facade)) {
+				$template = preg_replace('/Theme(\.|::)/', $facade.'$1', $template);
+			}
+			$this->files->put($file_path, $template);
+			if(substr($file_path, -10) == 'theme.json'){
+				$this->files->chmod($file_path, 0666);
 			}
 		}
 	}
 
-  /**
-	* Make file.
-	*
-	* @param  string $file
-	* @param  string $to
-	* @return void
-	*/
-	protected function makeFiles($files)
-	{
-		foreach ($files as $file => $to) {
-			$template = $this->getTemplate($file);
-
-			$path = $to.$file;
-
-			if (!$this->files->exists($this->getPath($path))){
-				$file_path = $this->getPath($path);
-
-				$facade = $this->option('facade');
-
-				if (!is_null($facade)){
-					$template = preg_replace('/Theme(\.|::)/', $facade.'$1', $template);
-				}
-
-				$this->files->put($file_path, $template);
-
-				if(substr($file_path, -10) == 'theme.json'){
-					$this->files->chmod($file_path, 0666);
-				}
-			}
-		}
-	}
 
   /**
 	* Get root writable path.
@@ -190,7 +181,8 @@ class ThemeGeneratorCommand extends Command {
 	*/
 	protected function getTemplate($template)
 	{
-		$path = realpath(__DIR__.'/../templates/'.$template);
+
+		$path = realpath(__DIR__.'/../templates/'.$template.'.txt');
 
 		return $this->files->get($path);
 	}
